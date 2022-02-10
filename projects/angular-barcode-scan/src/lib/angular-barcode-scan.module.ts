@@ -1,16 +1,16 @@
 import { NgModule } from '@angular/core';
-import { AngularBarcodeScanComponent } from './angular-barcode-scan.component';
+import { BarcodeHostListener } from './angular-barcode-scan.component';
 
 
 
 @NgModule({
   declarations: [
-    AngularBarcodeScanComponent
+    BarcodeHostListener
   ],
   imports: [
   ],
   exports: [
-    AngularBarcodeScanComponent
+    BarcodeHostListener
   ]
 })
 export class BarcodeScanModule { }

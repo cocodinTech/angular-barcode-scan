@@ -2,7 +2,7 @@
 Servicio Angular para manejar el plugin Cordova: `bardode-scan`
 ## install 
  - ionic cordova plugin add barcode-scan
- - npm install angular-barcode-scanner
+ - npm install angular-barcode-scan
 
  ```Angular
  app.module.ts:
@@ -25,7 +25,7 @@ Servicio Angular para manejar el plugin Cordova: `bardode-scan`
 
   app.component.html:
    <ion-app>
-    <lib-angular-barcode-scan></lib-angular-barcode-scan>
+    <barcode-host-listener></barcode-host-listener>
    ...
    </ion-app>
   `

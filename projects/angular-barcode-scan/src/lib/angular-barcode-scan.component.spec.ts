@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { AngularBarcodeScanComponent } from './angular-barcode-scan.component';
+import { BarcodeHostListener } from './angular-barcode-scan.component';
 
-describe('AngularBarcodeScanComponent', () => {
-  let component: AngularBarcodeScanComponent;
-  let fixture: ComponentFixture<AngularBarcodeScanComponent>;
+describe('BarcodeHostListener', () => {
+  let component: BarcodeHostListener;
+  let fixture: ComponentFixture<BarcodeHostListener>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ AngularBarcodeScanComponent ]
+      declarations: [ BarcodeHostListener ]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(AngularBarcodeScanComponent);
+    fixture = TestBed.createComponent(BarcodeHostListener);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { BarcodeScan } from './angular-barcode-scan.service';
 
-describe('ScannerProvider', () => {
+describe('BarcodeScan', () => {
   let service: BarcodeScan;
 
   beforeEach(() => {

@@ -41,6 +41,14 @@ export interface ISubscriber {
  *     ...
  *   ]
  * 
+ *  app.component.html
+ *  <ion-app>
+ *    <barcode-host-listener></barcode-host-listener>
+ *    ...
+ *  </ion-app>
+ * 
+ *          ---------------------------------
+ * 
  *  import { Device } from '@awesome-cordova-plugins/device/ngx';
  *  import { BarcodeScan } from 'angular-barcode-scanner';
  *  
@@ -220,7 +228,7 @@ export class BarcodeScan {
         cordova.plugins.BarcodeScan.enable(device, async (value: any) => {
           console.log('%c enableScan: ' + JSON.stringify(value), 'color:purple');
           if (device !== 'camera' && value.text) {
-            this.scanSubject.next({ flag: BarcodeScan.EVENT_ENABLE, result: value });
+            this.scanSubject.next({ flag: BarcodeScan.EVENT_ENABLE, result: value.text });
           }
           resolve(true);
         }, (err: any) => {
