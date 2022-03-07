@@ -16,17 +16,22 @@ export interface ISubscriber {
   subscriber: any;
 }
 
+export interface IDevice {
+  manufacture: string;
+  model: string;
+}
+
 /**
  *  @name BarcodeScan
- *  
+ *
  *  @description
  *  Servicio Angular para manejar el plugin Cordova: `bardode-scan`
- * 
+ *
  *  @usage
  * ```typescript
  * app.module.ts
  *  import { BarcodeScan,  BarcodeScanModule } from 'angular-barcode-scan';
- * 
+ *
  *  @NgModule({
  *   declarations: [
  *     ...
@@ -40,18 +45,18 @@ export interface ISubscriber {
  *     BarcodeScan
  *     ...
  *   ]
- * 
+ *
  *  app.component.html
  *  <ion-app>
  *    <barcode-host-listener></barcode-host-listener>
  *    ...
  *  </ion-app>
- * 
+ *
  *          ---------------------------------
- * 
+ *
  *  import { Device } from '@awesome-cordova-plugins/device/ngx';
  *  import { BarcodeScan } from 'angular-barcode-scanner';
- *  
+ *
  *  constructor(
  *    private barcodeScan: BarcodeScan,
  *    private device: Device
@@ -59,13 +64,20 @@ export interface ISubscriber {
  *
  *  ...
  *  await this.barcodeScan.setBarcodeDevice(this.device.model);
- * 
+ *
+ *  ...
+ *  await this.barcodeScan.setBarcodeDevice('NQuire300');
+ *  await this.barcodeScan.setBarcodeDevice(BarcodeScan.Newland);
+ *
+ *  ...
+ *  await this.barcodeScan.clearBarcodeDevice();
+ *
  *  ...
  *  this.scannerProvider.scanBarcode().then((result)=>{
  *       console.log(result);
  *    });
- * 
- *  
+ *
+ *
  *  ...
  *  this.barcodeScan.subscrbeToScan(this.subscribeKey,
  *     async (value) => {
@@ -73,10 +85,10 @@ export interface ISubscriber {
  *     }, (err) => {
  *       console.log(err);
  *     });
- * 
+ *
  *  ...
  *  this.barcodeScan.unSubscrbeToScan(this.subscribeKey);
- * 
+ *
  */
 @Injectable()
 export class BarcodeScan {
@@ -88,6 +100,16 @@ export class BarcodeScan {
   public static readonly EVENT_DISABLE: string = 'barcode-scanner-disable';
   public static readonly EVENT_GET_DEVICES: string = 'barcode-scanner-get-devices';
 
+  /**
+   * Fabricantes compatibles
+   */
+  public static readonly Chainway: string = 'c4050';
+  public static readonly Newland: string = 'NQuire300';
+  public static readonly Honeywell: string = 'EDA50K';
+  public static readonly Zebra: string = 'ZebraMC33';
+  public static readonly Unitech: string = 'UnitechEA300';
+  public static readonly Unitech630: string = 'EA630';
+
   // lista de los modelos del plugin, y nuevos modelos asociados con alguno de los anteriores
   private readonly compatibleHardware: any[] = [
     // modelos del plugin
@@ -96,6 +118,7 @@ export class BarcodeScan {
     { model: 'EDA50K', index: 3 },
     { model: 'ZebraMC33', index: 4 },
     { model: 'UnitechEA300', index: 5 },
+    { model: 'EA630', index: 6 },
     // modelos correlativos
     { model: 'EA300', index: 5 },
     { model: 'NQ300', index: 2 },
@@ -104,7 +127,7 @@ export class BarcodeScan {
 
   private scanSubject = new Subject<IScanEvent>();
   private subscribes: any = {};
-  private hardware = 'camera';
+  private hardware: IDevice = { manufacture: 'Cámara', model: 'camera' };
 
   constructor(
     private platform: Platform,
@@ -112,34 +135,55 @@ export class BarcodeScan {
   ) { }
 
   /**
-   * Selecciona el tipo de scanner según el modelo del dispositivo (this.device.model) y habilita el lector dedidado.
+   * Selecciona el tipo de scanner de la lista de compatibles y habilita el lector dedidado.
    * Se declara un objeto Subject<IScanEvent> al que podemos subscribirnos con .subscrbeToScan(...)
-   * 
-   * @param device el modelo del disposivo proporcionado por 'cordova-plugin-device'
+   *
+   * @param device posibles valores 'camera', 'c4050', 'NQuire300', 'EDA50K', 'ZebraMC33', 'UnitechEA300' (modelos correlativos) 'EA300', 'EA630', 'NQ300', 'TC20'
+   * @returns el dispositivo seleccionado
    */
-  public async setBarcodeDevice(model: string): Promise<any> {
+  public async setBarcodeDevice(model: string): Promise<IDevice> {
     this.hardware = await this.getPluginModel(model);
-    return await this.enableScan(this.hardware);
+    await this.enableScan(this.hardware.model);
+    return this.hardware;
   }
 
+  /**
+   * Deshabilita el scanner seleccionado
+   */
+  public async clearBarcodeDevice(): Promise<boolean> {
+    return await this.disableScan(this.hardware.model);
+  }
 
+  /**
+   * Devuelve los fabricantes compatibles y modelos de hardware que pueden enviarse como parámetro a la función setBarcodeDevice()
+   */
+  public getSupportedDevices(): IDevice[] {
+    return [
+      { manufacture: 'Chainway', model: 'c4050' },
+      { manufacture: 'Newland', model: 'NQuire300' },
+      { manufacture: 'Honeywell', model: 'EDA50K' },
+      { manufacture: 'Zebra', model: 'ZebraMC33' },
+      { manufacture: 'Unitech', model: 'UnitechEA300' },
+      { manufacture: 'Unitech630', model: 'EA630' }];
+  }
 
   /**
    * Inicia una lectura del hardware dedicado o lanza la camara para usarla como lector.
    * Cada vez que se produce un escaneo se propaga un Subject<IScanEvent>
-   * 
-   * @returns la lectura del scanner 
+   *
+   * @returns la lectura del scanner
    */
   public async scanBarcode(): Promise<string> {
-    return await this.scan(this.hardware);
+    return await this.scan(this.hardware.model);
   }
 
   /**
    * Declara un nuevo observable para escuchar los eventos del scanner
-   * @param id id único para declarar el observable. 
+   *
+   * @param id id único para declarar el observable.
    * Si el id fue utilizado anteriormente y la subscripción aun está activa se aborta la operación
-   * @param callbackFunction 
-   * @param errorFunction 
+   * @param callbackFunction
+   * @param errorFunction
    */
   public subscrbeToScan(id: string, callbackFunction: any, errorFunction: any): void {
     try {
@@ -163,6 +207,7 @@ export class BarcodeScan {
 
   /**
    * Se cierra el subscribe declarado con el id proporcionado
+   *
    * @param id id del observable para cancelar la subscripción
    */
   public unSubscrbeToScan(id: string): void {
@@ -174,9 +219,9 @@ export class BarcodeScan {
 
 
 
-  /*********************************************************************************************************/
+  /***************************************** llamadas al plugin *********************************************/
 
-  private async getPluginModel(nativeModel: string): Promise<string> {
+  private async getPluginModel(nativeModel: string): Promise<IDevice> {
     await this.platform.ready();
     return new Promise(async (resolve, reject) => {
       try {
@@ -191,7 +236,9 @@ export class BarcodeScan {
           if (result) {
             model = result.index;
           }
-          resolve(pluginDevices[model]);
+          const hardware: IDevice = this.getSupportedDevices().find(device => device.model === pluginDevices[model])
+            || { manufacture: 'Cámara', model: 'camera' };
+          resolve(hardware);
         }
       } catch (err) {
         reject(err);
@@ -208,6 +255,7 @@ export class BarcodeScan {
       }
       if (this.platform.is('cordova')) {
         cordova.plugins.BarcodeScan.getDevices((res: any) => {
+          console.log('%c getDevices: ' + JSON.stringify(res), 'color:orange');
           this.scanSubject.next({ flag: BarcodeScan.EVENT_GET_DEVICES, result: res });
           resolve(res);
         }, (err: any) => {
@@ -218,17 +266,18 @@ export class BarcodeScan {
   }
 
 
-  private enableScan(device: any): Promise<any> {
+  private enableScan(model: any): Promise<string> {
     return new Promise((resolve: any, reject: any) => {
       if (!this.platform.is('cordova')) {
         const msg = 'Scanner plugin not available';
         reject(msg);
       }
       if (this.platform.is('cordova')) {
-        cordova.plugins.BarcodeScan.enable(device, async (value: any) => {
+        cordova.plugins.BarcodeScan.enable(model, (value: any) => {
           console.log('%c enableScan: ' + JSON.stringify(value), 'color:purple');
-          if (device !== 'camera' && value.text) {
+          if (model !== 'camera' && value.text) {
             this.scanSubject.next({ flag: BarcodeScan.EVENT_ENABLE, result: value.text });
+            this.scanSubject.next({ flag: BarcodeScan.EVENT_SCAN, result: value.text });
           }
           resolve(true);
         }, (err: any) => {
@@ -238,29 +287,33 @@ export class BarcodeScan {
     });
   }
 
-  private disableScan(device: any): Promise<boolean> {
+  private disableScan(model: any): Promise<boolean> {
     return new Promise((resolve: any, reject: any) => {
       if (!this.platform.is('cordova')) {
         const msg = 'Scanner plugin not available';
         reject(msg);
       }
-      cordova.plugins.BarcodeScan.enable(device, (res: any) => {
-        this.scanSubject.next({ flag: BarcodeScan.EVENT_DISABLE, result: res });
+      if (model) {
+        cordova.plugins.BarcodeScan.enable(model, (res: any) => {
+          this.scanSubject.next({ flag: BarcodeScan.EVENT_DISABLE, result: res });
+          resolve(true);
+        }, (err: any) => {
+          reject(err);
+        });
+      } else {
         resolve(true);
-      }, (err: any) => {
-        reject(err);
-      });
+      }
     });
   }
 
-  private scan(device: any): Promise<string> {
+  private scan(model: any): Promise<string> {
     return new Promise((resolve: any, reject: any) => {
       if (!this.platform.is('cordova')) {
         const msg = 'Scanner plugin not available';
         reject(msg);
       }
       if (this.platform.is('cordova')) {
-        cordova.plugins.BarcodeScan.scan(device, (value: any) => {
+        cordova.plugins.BarcodeScan.scan(model, (value: any) => {
           console.log('%c Scan: ' + JSON.stringify(value), 'color:green');
           if (value.text) {
             this.scanSubject.next({ flag: BarcodeScan.EVENT_SCAN, result: value.text });
