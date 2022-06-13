@@ -99,6 +99,7 @@ export class BarcodeScan {
   public static readonly EVENT_ENABLE: string = 'barcode-scanner-enable';
   public static readonly EVENT_DISABLE: string = 'barcode-scanner-disable';
   public static readonly EVENT_GET_DEVICES: string = 'barcode-scanner-get-devices';
+  public static readonly EVENT_CANCEL: string = 'barcode-scanner-cancel';
 
   /**
    * Fabricantes compatibles
@@ -109,6 +110,7 @@ export class BarcodeScan {
   public static readonly Zebra: string = 'ZebraMC33';
   public static readonly Unitech: string = 'UnitechEA300';
   public static readonly Unitech630: string = 'EA630';
+  public static readonly ITOS: string = 'IT_51';
 
   // lista de los modelos del plugin, y nuevos modelos asociados con alguno de los anteriores
   private readonly compatibleHardware: any[] = [
@@ -119,6 +121,7 @@ export class BarcodeScan {
     { model: 'ZebraMC33', index: 4 },
     { model: 'UnitechEA300', index: 5 },
     { model: 'EA630', index: 6 },
+    { model: 'IT_51', index: 7 },
     // modelos correlativos
     { model: 'EA300', index: 5 },
     { model: 'NQ300', index: 2 },
@@ -164,7 +167,8 @@ export class BarcodeScan {
       { manufacture: 'Honeywell', model: 'EDA50K' },
       { manufacture: 'Zebra', model: 'ZebraMC33' },
       { manufacture: 'Unitech', model: 'UnitechEA300' },
-      { manufacture: 'Unitech630', model: 'EA630' }];
+      { manufacture: 'Unitech630', model: 'EA630' },
+      { manufacture: 'ITOS', model: 'IT_51' }];
   }
 
   /**
@@ -317,6 +321,8 @@ export class BarcodeScan {
           console.log('%c Scan: ' + JSON.stringify(value), 'color:green');
           if (value.text) {
             this.scanSubject.next({ flag: BarcodeScan.EVENT_SCAN, result: value.text });
+          } else if (value.cancelled) {
+            this.scanSubject.next({ flag: BarcodeScan.EVENT_CANCEL, result: null});
           }
           resolve(value.text);
         }, (err: any) => {
